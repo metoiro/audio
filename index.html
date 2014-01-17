@@ -1,0 +1,140 @@
+<html>
+<head></head>
+
+<body>
+<button onclick="loadSound('./basse.mp3')">Load musique</button>
+<button id="start" disabled onclick="playSound()">Start</button>
+<button disabled id="stop" onclick="stopSound()">Stop</button><br>
+ <progress id="progressBar" max="100" value="0"></progress> 
+ <style>
+  canvas {
+                border: solid 2Px black;
+                position                    : absolute;
+                top                         : 150px;
+                left                        : 200px;
+            }
+</style>
+ <canvas id="myCanvas" width="800" height="400"></canvas>
+</body>
+<script>
+window.requestAnimFrame = (function() {
+    return window.requestAnimationFrame ||
+            window.webkitRequestAnimationFrame ||
+            window.mozRequestAnimationFrame ||
+            window.oRequestAnimationFrame ||
+            window.msRequestAnimationFrame ||
+            function(/* function */ callback, /* DOMElement */ element) {
+                window.setTimeout(callback, 1000 / 60);
+            };
+})();
+
+
+var rani = 0;
+var context = new AudioContext();
+var start = document.querySelector("#start");
+var stop = document.querySelector("#stop");
+var frontCanvas, frontCtx;
+var x = 1;
+var canvas = document.querySelector("#myCanvas");
+ctx = canvas.getContext('2d');
+
+frontCanvas = document.createElement('canvas');
+ frontCanvas.id = 'canvasFront';
+// Add it as a second child of the mainCanvas parent.
+canvas.parentNode.appendChild(frontCanvas);
+ // make it same size as its brother
+frontCanvas.height = canvas.height;
+frontCanvas.width = canvas.width;
+frontCtx = frontCanvas.getContext('2d');
+
+function animateTime() {
+
+	x = context.currentTime;
+	total = window.source.buffer.duration;
+
+	console.log(total);
+	x = context.currentTime * canvas.width / total;  
+	frontCtx.clearRect(0, 0, canvas.width, canvas.height);
+	frontCtx.fillStyle = 'red';
+	frontCtx.font = '14pt Arial';
+	frontCtx.fillText("Je test donc je suis", 100, 20);
+
+ 	frontCtx.strokeStyle = "blue";
+	frontCtx.lineWidth = 3;
+	frontCtx.beginPath();
+	frontCtx.moveTo(x, 0);
+	frontCtx.lineTo(x, canvas.height);
+	frontCtx.stroke();
+
+    requestAnimFrame(animateTime);
+}
+
+function progressFunction(evt){
+    console.log(evt);
+    var progressBar = document.getElementById("progressBar");
+    if (evt.lengthComputable) {
+	        progressBar.max = evt.total;
+		progressBar.value = evt.loaded;
+	}
+}
+
+function loadSound(url) {
+
+
+	xhr = new XMLHttpRequest();
+        xhr.addEventListener("progress", progressFunction, false);
+	xhr.open('GET',url,true);
+	xhr.responseType = 'arraybuffer';
+	
+	xhr.onload = function() {
+	
+		console.log(xhr.response);
+		decode(xhr.response);
+	}
+
+	xhr.send();
+}
+
+function decode(musiqueData) {
+
+	console.log("decode");
+	context.decodeAudioData(musiqueData, function onSuccess(buffer) {
+	
+		window.musique = buffer;
+		document.getElementById("start").disabled = false;
+	//	playSound(musique);
+	}, function onError() {
+	
+		console.log("errer decode audio");
+	})
+}
+
+function playSound() {
+
+	console.log("playe sound");
+	window.source = context.createBufferSource();
+	window.source.buffer = window.musique;
+	window.source.connect(context.destination);
+
+	window.source.start(0);
+	document.getElementById("start").disabled = true;
+	document.getElementById("stop").disabled = false;
+	animateTime();
+}
+ function stopSound() {
+ 
+ 	console.log("stop");
+	window.source.stop(0);
+
+	document.getElementById("start").disabled = false;
+	document.getElementById("stop").disabled = true;
+ }
+/*
+function init() {
+
+	loadSound('./basse.mp3');
+}
+*/
+</script>
+
+</html>
